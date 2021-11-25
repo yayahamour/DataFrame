@@ -25,47 +25,65 @@ def data_serie():
     serie["Titre_original"]= serie["Titre_original"].map(lambda time: re.sub("Original title: ", "", time)) 
     return serie
 
-def recherche(multi_select, recherche_titre, recherche_actor, in_screen):
-    aff = in_screen
+def recherche(multi_select, recherche_titre, recherche_actor, in_screen, note):
     for select in multi_select:
-        aff = aff.loc[aff["Type"].str.contains(select)]
-    aff = aff.loc[aff["Actors"].str.contains(recherche_actor)]
-    aff = aff.loc[aff["Titre"].str.contains(recherche_titre.lower())]
-    return aff
+        in_screen = in_screen.loc[in_screen["Type"].str.contains(select)]
+    in_screen = in_screen.loc[in_screen["Actors"].str.contains(recherche_actor)]
+    in_screen = in_screen.loc[in_screen["Titre"].str.contains(recherche_titre)]
+    in_screen = in_screen.loc[in_screen["Note"] >= note]
+    return in_screen
+
+def time_minute(time):
+    tab = time.split(':')
+    return((int(tab[0])*60) + int(tab[1]))
+
+def time_heure(minute):
+    heure = 0
+    while(minute > 60):
+        heure += 1
+        minute -= 60
+    string = str(heure) + ":" + str(minute)
+    return(string)
 
 
-st.title("Appli")
-serie = data_serie()
+st.title("Recherche :")
+container_film = st.container()
 film = data_film()
-button = st.sidebar.button("Serie")
-button1 = st.sidebar.button("Film")
-multi_select = st.sidebar.multiselect('Genre',
-                                        ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
-                                         'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
-                                         'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
-                                         'Sport'])
-recherche_titre = st.sidebar.text_input("Recherche titre")
-recherche_actor = st.sidebar.text_input("Recherche acteur")
-in_screen = film
-
-if (button):
-    in_screen = serie
-    aff = serie
-    st.write(aff)
-
-if (button1):
-    in_screen = film
-    aff = film
-    st.write(aff)
-
-if(recherche_titre):
-    aff = recherche(multi_select, recherche_titre, recherche_actor, in_screen)
-    st.write(aff)
+container_serie = st.container()
+serie = data_serie()
+with container_film :    
+    button_film = st.sidebar.button("Film")
+    multi_select_film = st.sidebar.multiselect('Genre Film',
+                                         ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
+                                          'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
+                                          'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
+                                          'Sport'])
+    recherche_titre_film = st.sidebar.text_input("Recherche titre film")
+    recherche_actor_film = st.sidebar.text_input("Recherche acteur film")
+    note_film = st.sidebar.slider('Note film', 0, 10, 5)
+    button_recherche_film = st.sidebar.button("Recherche film")
     
-if(recherche_actor):
-    aff = recherche(multi_select, recherche_titre, recherche_actor, in_screen)
-    st.write(aff)
+    if (button_film):
+        container_film.dataframe(film)
+    if (button_recherche_film):
+        recherche_film = recherche(multi_select_film, recherche_titre_film, recherche_actor_film, film, float(note_film))
+        container_film.dataframe(recherche_film)
 
-if (multi_select):
-    aff = recherche(multi_select, recherche_titre, recherche_actor, in_screen)
-    st.write(aff)
+
+
+with container_serie :    
+    button_serie = st.sidebar.button("Serie")
+    multi_select_serie = st.sidebar.multiselect('Genre Serie',
+                                         ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
+                                          'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
+                                          'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
+                                          'Sport'])
+    recherche_titre_serie = st.sidebar.text_input("Recherche titre serie")
+    recherche_actor_serie = st.sidebar.text_input("Recherche acteur serie")
+    note_serie = st.sidebar.slider('Note serie', 0, 10, 5)
+    button_recherche_serie = st.sidebar.button("Recherche serie")
+    if (button_serie):
+        container_serie.dataframe(serie)
+    if (button_recherche_serie):
+        recherche_serie = recherche(multi_select_serie, recherche_titre_serie, recherche_actor_serie, serie, float(note_serie))
+        container_serie.dataframe(recherche_serie)
