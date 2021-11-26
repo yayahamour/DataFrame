@@ -3,7 +3,7 @@ import files as f
 
 
 def search(multi_select, title_search, actor_search, data, note, time):
-    """[summary]
+    """[Fonction for searching args in data]
 
     Args:
         multi_select ([list of string]): [list of the category you want search]
@@ -24,6 +24,25 @@ def search(multi_select, title_search, actor_search, data, note, time):
     data = data.loc[data["Duree"].apply(lambda x : f.time_in_minute(str(x))) <= time]    
     return data
 
+def list_type(data):
+    """[Fontion for give all element of keys : "Type" in dictionary without repetition]
+
+    Args:
+        data (Dictionary): [dictionary of data]
+
+    Returns:
+        [list]: [return a list of string without repetition]
+    """
+    liste = data["Type"]
+    liste_type = []
+    for string in liste:
+        tab = string.split(",")
+        for type_ in tab:
+            try :
+                liste_type.index(type_)
+            except :
+                liste_type.append(type_)
+    return liste_type
 
 def main():
     """[This is the main function to start the project]
@@ -35,11 +54,9 @@ def main():
     series = f.data_series()
     with container_movie :    
         button_movie = st.sidebar.button("Film")
+        list_type_movie = list_type(movie)
         multi_select_movie = st.sidebar.multiselect('Genre Film',
-                                            ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
-                                            'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
-                                            'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
-                                            'Sport'])
+                                           list_type_movie)
         research_title_movie = st.sidebar.text_input("Recherche titre film")
         research_actor_movie = st.sidebar.text_input("Recherche acteur film")
         note_movie = st.sidebar.slider('Note film', 0, 10, 0)
@@ -56,11 +73,9 @@ def main():
 
     with container_series :    
         button_series = st.sidebar.button("Serie")
+        list_type_series = list_type(series)
         multi_select_series = st.sidebar.multiselect('Genre Serie',
-                                            ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
-                                            'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
-                                            'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
-                                            'Sport'])
+                                            list_type_series)
         research_title_series = st.sidebar.text_input("Recherche titre serie")
         research_actor_series = st.sidebar.text_input("Recherche acteur serie")
         note_series = st.sidebar.slider('Note serie', 0, 10, 0)
