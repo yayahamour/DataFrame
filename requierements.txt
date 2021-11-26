@@ -1,0 +1,4 @@
+pandas
+heroku
+re
+streamlit
