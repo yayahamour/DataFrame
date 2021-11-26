@@ -14,15 +14,16 @@ def search(multi_select, title_search, actor_search, data, note, time):
         time ([int]): [int of the duration of the film you want]
 
     Returns:
-        [type]: [description]
+        [dctionary]: [result of the different research]
     """
     for select in multi_select:
         data = data.loc[data["Type"].str.contains(select)]
-    mask_actor = data.loc[data["Actors"].str.contains(actor_search)]
-    mask_title = data.loc[data["Titre"].str.contains(title_search)]
-    mask_note = data.loc[data["Note"] >= note]
-    mask_time = data.loc[data["Duree"].apply(lambda x : f.time_in_minute(str(x))) <= time]    
-    return data[mask_time & mask_actor & mask_note & mask_title]
+    data = data.loc[data["Actors"].str.contains(actor_search)]
+    data = data.loc[data["Titre"].str.contains(title_search)]
+    data = data.loc[data["Note"] >= note]
+    data = data.loc[data["Duree"].apply(lambda x : f.time_in_minute(str(x))) <= time]    
+    return data
+
 
 def main():
     """[This is the main function to start the project]
