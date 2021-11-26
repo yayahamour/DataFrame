@@ -3,9 +3,29 @@ import streamlit as st
 import pandas
 import re
 
+
+def format_temps(temps):
+    h = 0
+    m = 0
+    recherche = (re.findall(r"([0-9]+)h", temps))
+    if (len(recherche) > 0):
+        h = int(recherche[0])
+    recherche = (re.findall(r"([0-9]+)m", temps))
+    if (len(recherche) > 0):
+        m = int(recherche[0])
+    string = str(h)
+    if (m >= 10):
+        string+=":"+str(m)
+    else:
+        string+=":0"+str(m)
+    return string
+
 def time_minute(time):
     tab = time.split(':')
-    return((int(tab[0])*60) + int(tab[1]))
+    if (len(tab) == 2):
+        return((int(tab[0])*60) + int(tab[1]))
+    tab[0] = tab[0].replace(":", "")
+    return (int(tab[0]))
 
 def time_heure(minute):
     heure = 0
@@ -14,20 +34,17 @@ def time_heure(minute):
         minute -= 60
     string_minute = str(minute)
     string_heure = str(heure) 
-    if(len(string_minute) == 1):
+    if(minute < 10):
         string_minute = "0"+ string_minute
-    if(len(string_minute) == 0):
-        string_minute = "00"
     string = string_heure + ":" + string_minute
     return(string)
 
 def data_film():
     film = pandas.read_csv("film.csv")
     film["Duree"] = film["Duree"].map(lambda time: time.replace(",", ""))
-    film["Duree"] = film["Duree"].map(lambda time: time.replace("h ",":"))
-    film["Duree"] = film["Duree"].map(lambda time: time.replace("h",""))
-    film["Duree"] = film["Duree"].map(lambda time: time.replace("m", ""))
-    film["Duree"] = film["Duree"].map(lambda time: re.sub(r"^[0-9]+$", "0:"+time, time))
+    film["Duree"] = film["Duree"].map(lambda time: re.sub("TV Mini Series", "", time))
+    film["Duree"] = film["Duree"].map(lambda time: re.sub("TV Series", "", time))
+    film["Duree"] = film["Duree"].map(lambda time: format_temps(time))
     film["Titre_original"] = film["Titre_original"].fillna("")
     film["Titre_original"]= film["Titre_original"].map(lambda time: re.sub("Original title: ", "", time)) 
     return film
@@ -35,10 +52,9 @@ def data_film():
 def data_serie():
     serie = pandas.read_csv("serie.csv")
     serie["Duree"] = serie["Duree"].map(lambda time: time.replace(",", ""))
-    serie["Duree"] = serie["Duree"].map(lambda time: time.replace("h ",":"))
-    serie["Duree"] = serie["Duree"].map(lambda time: time.replace("m", ""))
     serie["Duree"] = serie["Duree"].map(lambda time: re.sub("TV Mini Series", "", time))
     serie["Duree"] = serie["Duree"].map(lambda time: re.sub("TV Series", "", time))
+    serie["Duree"] = serie["Duree"].map(lambda time: format_temps(time))
     serie["Titre_original"] = serie["Titre_original"].fillna("")
     serie["Titre_original"]= serie["Titre_original"].map(lambda time: re.sub("Original title: ", "", time)) 
     return serie
@@ -50,6 +66,7 @@ def recherche(multi_select, recherche_titre, recherche_actor, in_screen, note, t
     in_screen = in_screen.loc[in_screen["Titre"].str.contains(recherche_titre)]
     in_screen = in_screen.loc[in_screen["Note"] >= note]
     in_screen = in_screen.loc[in_screen["Duree"].apply(lambda x : time_minute(str(x))) <= temps]
+    
     return in_screen
 
 st.title("Recherche :")
