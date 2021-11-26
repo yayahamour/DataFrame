@@ -1,113 +1,73 @@
-from datetime import date
 import streamlit as st
-import pandas
-import re
+import files as f
 
 
-def format_temps(temps):
-    h = 0
-    m = 0
-    recherche = (re.findall(r"([0-9]+)h", temps))
-    if (len(recherche) > 0):
-        h = int(recherche[0])
-    recherche = (re.findall(r"([0-9]+)m", temps))
-    if (len(recherche) > 0):
-        m = int(recherche[0])
-    string = str(h)
-    if (m >= 10):
-        string+=":"+str(m)
-    else:
-        string+=":0"+str(m)
-    return string
+def search(multi_select, title_search, actor_search, data, note, time):
+    """[summary]
 
-def time_minute(time):
-    tab = time.split(':')
-    if (len(tab) == 2):
-        return((int(tab[0])*60) + int(tab[1]))
-    tab[0] = tab[0].replace(":", "")
-    return (int(tab[0]))
+    Args:
+        multi_select ([list of string]): [list of the category you want search]
+        title_search ([string]): [string of the title you want search]
+        actor_search ([string]): [string of the actor you want search]
+        data ([dictionary]): [Dictionary where you want search]
+        note ([float]): [float of the minimum note of the film you want]
+        time ([int]): [int of the duration of the film you want]
 
-def time_heure(minute):
-    heure = 0
-    while(minute > 60):
-        heure += 1
-        minute -= 60
-    string_minute = str(minute)
-    string_heure = str(heure) 
-    if(minute < 10):
-        string_minute = "0"+ string_minute
-    string = string_heure + ":" + string_minute
-    return(string)
-
-def data_film():
-    film = pandas.read_csv("film.csv")
-    film["Duree"] = film["Duree"].map(lambda time: time.replace(",", ""))
-    film["Duree"] = film["Duree"].map(lambda time: re.sub("TV Mini Series", "", time))
-    film["Duree"] = film["Duree"].map(lambda time: re.sub("TV Series", "", time))
-    film["Duree"] = film["Duree"].map(lambda time: format_temps(time))
-    film["Titre_original"] = film["Titre_original"].fillna("")
-    film["Titre_original"]= film["Titre_original"].map(lambda time: re.sub("Original title: ", "", time)) 
-    return film
-
-def data_serie():
-    serie = pandas.read_csv("serie.csv")
-    serie["Duree"] = serie["Duree"].map(lambda time: time.replace(",", ""))
-    serie["Duree"] = serie["Duree"].map(lambda time: re.sub("TV Mini Series", "", time))
-    serie["Duree"] = serie["Duree"].map(lambda time: re.sub("TV Series", "", time))
-    serie["Duree"] = serie["Duree"].map(lambda time: format_temps(time))
-    serie["Titre_original"] = serie["Titre_original"].fillna("")
-    serie["Titre_original"]= serie["Titre_original"].map(lambda time: re.sub("Original title: ", "", time)) 
-    return serie
-
-def recherche(multi_select, recherche_titre, recherche_actor, in_screen, note, temps):
+    Returns:
+        [type]: [description]
+    """
     for select in multi_select:
-        in_screen = in_screen.loc[in_screen["Type"].str.contains(select)]
-    in_screen = in_screen.loc[in_screen["Actors"].str.contains(recherche_actor)]
-    in_screen = in_screen.loc[in_screen["Titre"].str.contains(recherche_titre)]
-    in_screen = in_screen.loc[in_screen["Note"] >= note]
-    in_screen = in_screen.loc[in_screen["Duree"].apply(lambda x : time_minute(str(x))) <= temps]
-    
-    return in_screen
+        data = data.loc[data["Type"].str.contains(select)]
+    mask_actor = data.loc[data["Actors"].str.contains(actor_search)]
+    mask_title = data.loc[data["Titre"].str.contains(title_search)]
+    mask_note = data.loc[data["Note"] >= note]
+    mask_time = data.loc[data["Duree"].apply(lambda x : f.time_in_minute(str(x))) <= time]    
+    return data[mask_time & mask_actor & mask_note & mask_title]
 
-st.title("Recherche :")
-container_film = st.container()
-film = data_film()
-container_serie = st.container()
-serie = data_serie()
-with container_film :    
-    button_film = st.sidebar.button("Film")
-    multi_select_film = st.sidebar.multiselect('Genre Film',
-                                         ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
-                                          'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
-                                          'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
-                                          'Sport'])
-    recherche_titre_film = st.sidebar.text_input("Recherche titre film")
-    recherche_actor_film = st.sidebar.text_input("Recherche acteur film")
-    note_film = st.sidebar.slider('Note film', 0, 10, 0)
-    temps_film = st.sidebar.slider('temps film en minute', 0, 360, 360)
-    button_recherche_film = st.sidebar.button("Recherche film")
-    
-    if (button_film):
-        container_film.dataframe(film)
-    if (button_recherche_film):
-        recherche_film = recherche(multi_select_film, recherche_titre_film, recherche_actor_film, film, float(note_film), temps_film)
-        container_film.dataframe(recherche_film)
+def main():
+    """[This is the main function to start the project]
+    """
+    st.title("Recherche :")
+    container_movie = st.container()
+    movie = f.data_movie()
+    container_series = st.container()
+    series = f.data_series()
+    with container_movie :    
+        button_movie = st.sidebar.button("Film")
+        multi_select_movie = st.sidebar.multiselect('Genre Film',
+                                            ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
+                                            'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
+                                            'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
+                                            'Sport'])
+        research_title_movie = st.sidebar.text_input("Recherche titre film")
+        research_actor_movie = st.sidebar.text_input("Recherche acteur film")
+        note_movie = st.sidebar.slider('Note film', 0, 10, 0)
+        time_movie = st.sidebar.slider('temps film en minute', 0, 360, 360)
+        button_research_movie = st.sidebar.button("Recherche film")
+        
+        if (button_movie):
+            container_movie.dataframe(movie)
+        if (button_research_movie):
+            research_movie = search(multi_select_movie ,research_title_movie, research_actor_movie , movie, float(note_movie), time_movie)
+            container_movie.dataframe(research_movie)
 
 
 
-with container_serie :    
-    button_serie = st.sidebar.button("Serie")
-    multi_select_serie = st.sidebar.multiselect('Genre Serie',
-                                         ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
-                                          'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
-                                          'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
-                                          'Sport'])
-    recherche_titre_serie = st.sidebar.text_input("Recherche titre serie")
-    recherche_actor_serie = st.sidebar.text_input("Recherche acteur serie")
-    note_serie = st.sidebar.slider('Note serie', 0, 10, 0)
-    button_recherche_serie = st.sidebar.button("Recherche serie")
-    if (button_serie):
-        container_serie.dataframe(serie)
-    if (button_recherche_serie):
-        recherche_serie = recherche(multi_select_serie, recherche_titre_serie, recherche_actor_serie, serie, float(note_serie), 8000)
-        container_serie.dataframe(recherche_serie)
+    with container_series :    
+        button_series = st.sidebar.button("Serie")
+        multi_select_series = st.sidebar.multiselect('Genre Serie',
+                                            ['Drama', 'Action', 'Adventure', 'Sci-Fi', 'Film-Noir',
+                                            'War', 'Mystery', 'Thriller', 'Mystery', 'Western', 'Family',
+                                            'Fantasy', 'History', 'Romance', 'Comedy', 'Biography', 'Crime',
+                                            'Sport'])
+        research_title_series = st.sidebar.text_input("Recherche titre serie")
+        research_actor_series = st.sidebar.text_input("Recherche acteur serie")
+        note_series = st.sidebar.slider('Note serie', 0, 10, 0)
+        button_research_series = st.sidebar.button("Recherche serie")
+        if (button_series):
+            container_series.dataframe(series)
+        if (button_research_series):
+            research_series = search(multi_select_series, research_title_series, research_actor_series, series, float(note_series), 8000)
+            container_series.dataframe(research_series)
+
+main()
